@@ -36,20 +36,22 @@ def ASDReg(ro, ds):
         vs += D/(d**2)
     return np.exp(-ro-0.5*vs)
 
-def evidence(X, Y, D, (ro, ssq, delta)):
+def MeanCovReg(X, Y, D, (ro, ssq, delta)):
     p, q = X.shape
     XX = X.T.dot(X)
     XY = X.T.dot(Y)
     Reg = ASDReg(ro, [(D, delta)])
     sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
+    mu = PostMean(sigma, XY, ssq)
+    return mu, sigma, Reg
+
+def evidence(X, Y, D, (ro, ssq, delta)):
+    p, q = X.shape
+    _, sigma, Reg = MeanCovReg(X, Y, D, (ro, ssq, delta))
     return ASDEvi(X, Y, Reg, sigma, ssq, p, q)
 
 def loglikelihood(X, Y, D, (ro, ssq, delta)):
-    XX = X.T.dot(X)
-    XY = X.T.dot(Y)
-    Reg = ASDReg(ro, [(D, delta)])
-    sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
-    mu = PostMean(sigma, XY, ssq)
+    mu, sigma, Reg = MeanCovReg(X, Y, D, (ro, ssq, delta))
     return ASDLogLikelihood(Y, X, mu, ssq)
 
 def scores(X0, Y0, X1, Y1, D, (ro, ssq, delta)):

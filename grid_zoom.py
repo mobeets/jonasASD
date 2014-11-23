@@ -57,8 +57,15 @@ def grid_zoom(X, Y, D, hyper0, delta0=None, nbins=4, nzooms=4, outfile='out/evid
     delta0 is array - distance above and below each hyperparameter to include in grid
     nbins is int - number of bins in each dimension (default = hyper0 - 1e-3)
     nzooms is int - number of recursions
+
+    (0.18593049482814772, 1.0013184627777783, 3.6758187813580245)
+    $ python main.py ~/Desktop/design.npy --ro 0.18593049482814772 --ssq 1.0013184627777783 --delta 3.6758187813580245
+        Initial scores...
+        ro=0.185930494828, ssq=1.00131846278, delta=3.67581878136
+        evidence=835929962.586
+        neg. log likelihood=34109514.9469
     """
-    delta0 = np.array(hyper0)-1e-3 if delta0 is None else delta0
+    delta0 = np.array(hyper0) - 1e-5 if delta0 is None else delta0
 
     nhypers = len(hyper0)
     deltas = np.zeros([nzooms, nhypers])
@@ -85,9 +92,10 @@ def grid_zoom(X, Y, D, hyper0, delta0=None, nbins=4, nzooms=4, outfile='out/evid
 
         nextCenter = eviM[0]
         centers[i+1,:] = nextCenter
+        keepAboveZero = lambda d, c: d if (c - d) > 0 else (c - 1e-5)
         if i+1 < nzooms:
-            deltas[i+1,:] = next_zoom(center, delta, nextCenter, nbins)*1.05 # perturb slightly
-            deltas[i+1,-2] = np.min([deltas[i+1,-2], nextCenter[-2] + 1e-5]) # keep ssq above 0
-            deltas[i+1,-1] = np.min([deltas[i+1,-1], nextCenter[-1] + 1e-5]) # keep delta above 0
+            deltas[i+1,:] = next_zoom(center, delta, nextCenter, nbins)*0.95 # perturb slightly
+            deltas[i+1,-2] = keepAboveZero(deltas[i+1,-2], nextCenter[-2])
+            deltas[i+1,-1] = keepAboveZero(deltas[i+1,-1], nextCenter[-1])
         print '======'
     pd.DataFrame(evidences).to_csv('out/evidences.csv')
