@@ -25,15 +25,12 @@ def plot(ax, df, xkey='2', ykey='1', zkey='3', grpkey='0', gray=False):
     plt.xlabel('delta')
     plt.ylabel('ssq')
     ax.set_zlabel('log evidence')
-    # ax.set_zlim((-10000, None))
 
 def main():
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     df = load('out/evidences.csv')
     plot(ax, df, gray=True)
-    # df = load('evidences 2.csv', 255)
-    # plot(ax, df, gray=False)
     plt.show()
 
 if __name__ == '__main__':
