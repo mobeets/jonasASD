@@ -13,9 +13,9 @@ def color_list(n, cmap=None, gray=True):
 
 def load(infile, lastind=None):
     df = pd.read_csv(infile)
-    df = df[df['1'] > 0]
-    df = df[df['2'] > 0]
-    df = df[df['3'] > -5000]
+    # df = df[df['1'] > 0]
+    # df = df[df['2'] > 0]
+    # df = df[df['3'] > -5000]
     return df if lastind is None else df.ix[:lastind]
 
 def plot(ax, df, xkey='2', ykey='1', zkey='3', grpkey='0', gray=False):
@@ -28,8 +28,8 @@ def plot(ax, df, xkey='2', ykey='1', zkey='3', grpkey='0', gray=False):
 
 def main():
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
     df = load('out/evidences.csv')
+    ax = fig.gca(projection='3d')
     plot(ax, df, gray=True)
     plt.show()
 

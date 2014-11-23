@@ -95,7 +95,7 @@ def grid_zoom(X, Y, D, hyper0, delta0=None, nbins=4, nzooms=4, outfile='out/evid
         keepAboveZero = lambda d, c: d if (c - d) > 0 else (c - 1e-5)
         if i+1 < nzooms:
             deltas[i+1,:] = next_zoom(center, delta, nextCenter, nbins)*0.95 # perturb slightly
-            deltas[i+1,-2] = keepAboveZero(deltas[i+1,-2], nextCenter[-2])
+            # deltas[i+1,-2] = keepAboveZero(deltas[i+1,-2], nextCenter[-2])
             deltas[i+1,-1] = keepAboveZero(deltas[i+1,-1], nextCenter[-1])
         print '======'
     pd.DataFrame(evidences).to_csv('out/evidences.csv')

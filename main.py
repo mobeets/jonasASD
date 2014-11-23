@@ -17,8 +17,8 @@ def main(infile, trainPct, nLags, (ro, ssq, delta), doPlot, doMinimize, doGridZo
     print 'neg. log likelihood={0}'.format(nll)
     print
     if doPlot:
-        mu, _, _ = MeanCovReg(X0, Y0, D, (ro, ssq, delta))
-        plt.plot(mu, 'o', alpha=0.5)
+        mu, _, _ = MeanCovReg(X0, Y0, ro, ssq, [(D, delta)])
+        plt.plot(mu, '-', alpha=0.5)
         plt.show()
     if doMinimize:
         print 'Solving...'
