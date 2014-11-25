@@ -1,7 +1,7 @@
 import itertools
 import numpy as np
 import pandas as pd
-from asd import ASDReg, ASDEvi, PostCov
+from asd import ASDReg, ASDEvi, PostCov, LOWER_BOUND_DELTA_TEMPORAL
 
 def nextHyperInGridFromHyper(hyper, ds, n):
     rng = []
@@ -92,10 +92,10 @@ def grid_zoom(X, Y, D, hyper0, delta0=None, nbins=4, nzooms=4, outfile='out/evid
 
         nextCenter = eviM[0]
         centers[i+1,:] = nextCenter
-        keepAboveZero = lambda d, c: d if (c - d) > 0 else (c - 1e-5)
+        keepLowerBound = lambda d, c, lb=0.0: d if (c - d) > lb else (c - lb - 1e-5)
         if i+1 < nzooms:
             deltas[i+1,:] = next_zoom(center, delta, nextCenter, nbins)*0.95 # perturb slightly
-            # deltas[i+1,-2] = keepAboveZero(deltas[i+1,-2], nextCenter[-2])
-            deltas[i+1,-1] = keepAboveZero(deltas[i+1,-1], nextCenter[-1])
+            deltas[i+1,-2] = keepLowerBound(deltas[i+1,-2], nextCenter[-2])
+            deltas[i+1,-1] = keepLowerBound(deltas[i+1,-1], nextCenter[-1], LOWER_BOUND_DELTA_TEMPORAL)
         print '======'
     pd.DataFrame(evidences).to_csv('out/evidences.csv')

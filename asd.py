@@ -1,5 +1,8 @@
 import numpy as np
 
+# LOWER_BOUND_DELTA_TEMPORAL = 0.025904
+LOWER_BOUND_DELTA_TEMPORAL = 0.12 # less than about 0.30 is indistinguishable
+
 def PostCov(RegInv, XX, ssq):
     return np.linalg.inv((XX/ssq) + RegInv)
 
@@ -39,22 +42,22 @@ def ASDReg(ro, ds):
         vs += D/(d**2)
     return np.exp(-ro-0.5*vs)
 
-def MeanCovReg(X, Y, ro, ssq, ds):
-    p, q = X.shape
+def MeanCov(X, Y, Reg, ro, ssq):
     XX = X.T.dot(X)
     XY = X.T.dot(Y)
-    Reg = ASDReg(ro, ds)
     sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
     mu = PostMean(sigma, XY, ssq)
-    return mu, sigma, Reg
+    return mu, sigma
 
 def evidence(X, Y, D, (ro, ssq, delta)):
     p, q = X.shape
-    _, sigma, Reg = MeanCovReg(X, Y, ro, ssq, [(D, delta)])
+    Reg = ASDReg(ro, [(D, delta)])
+    _, sigma = MeanCov(X, Y, Reg, ro, ssq)
     return ASDEvi(X, Y, Reg, sigma, ssq, p, q)
 
 def loglikelihood(X, Y, D, (ro, ssq, delta)):
-    mu, sigma, Reg = MeanCovReg(X, Y, ro, ssq, [(D, delta)])
+    Reg = ASDReg(ro, [(D, delta)])
+    mu, sigma = MeanCov(X, Y, Reg, ro, ssq)
     return ASDLogLikelihood(Y, X, mu, ssq)
 
 def scores(X0, Y0, X1, Y1, D, (ro, ssq, delta)):
