@@ -1,11 +1,13 @@
 import numpy as np
 import scipy.spatial.distance
 
-def split(X, Y, N, M, startM=0, front=True):
+def split(X, Y, N=None, M=None, startM=0, front=True):
     """
     N is int - number of trials
     M is int - number of lags
     """
+    N = N if N is not None else Y.shape[0]
+    M = M if M is not None else X.shape[1]
     if front:
         X = X[:N, startM:startM+M]
         Y = Y[:N]

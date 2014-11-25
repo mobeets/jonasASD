@@ -55,7 +55,6 @@ def ASD_noDelta(X, Y, Ds, deltas, theta0=None, method='L-BFGS-B'): # 'SLSQP'
 
     def objfcn(hyper):
         ro, ssq = hyper
-        # deltas = hyper[2:]
         Reg = ASDReg(ro, zip(Ds, deltas))
         sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
         return -ASDEvi(X, Y, Reg, sigma, ssq, p, q)
@@ -66,7 +65,6 @@ def ASD_noDelta(X, Y, Ds, deltas, theta0=None, method='L-BFGS-B'): # 'SLSQP'
     hyper = theta['x']
     print hyper
     ro, ssq = hyper
-    # deltas = hyper[2:]
     Reg = ASDReg(ro, zip(Ds, deltas))
     sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
     mu = PostMean(sigma, XY, ssq)
