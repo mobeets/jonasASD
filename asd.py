@@ -21,6 +21,33 @@ def ASDEvi(X, Y, Reg, sigma, ssq, p, q):
     B = (np.eye(p)/ssq) - (X.dot(sigma).dot(X.T))/(ssq**2)
     return 0.5*(logZ - Y.T.dot(B).dot(Y))
 
+def ASDLogEvi(X, Y, Reg, Sigma, ssq, p, q):
+    A0 = X.T.dot(X).dot(Reg)/ssq + np.eye(q)
+    A = 8*np.pi*ssq*A0
+    B0 = np.eye(p)/ssq - X.T.dot(Sigma).dot(X)/(ssq**2)
+    B = Y.dot(B0).dot(Y.T)
+    return -(logDet(A) + B)/2.0
+
+rinv = lambda A, y: np.linalg.solve(A.T, y.T).T
+
+def ASDEviGradient(hyper, p, q, Ds, mu, sigma, Reg, sse):
+    """
+    gradient of log evidence w.r.t. hyperparameters
+    """
+    ro, ssq = hyper[:2]
+    deltas = hyper[2:]
+    Z = rinv(Reg, Reg - sigma - np.outer(mu, mu))
+    der_ro = np.trace(Z)/2.0
+    
+    # the below two lines are not even used!
+    v = -p + np.trace(np.eye(q) - rinv(Reg, sigma))
+    der_ssq = sse/(ssq**2) + v/ssq
+
+    der_deltas = []
+    for (D, d) in zip(Ds, deltas):
+        der_deltas.append(-np.trace(rinv(Reg, Z.dot(Reg * D/(d**3))))/2.0)
+    return np.array((der_ro, der_ssq) + tuple(der_deltas))
+
 def ASDLogLikelihood(Y, X, mu, ssq):
     sse = ((Y - X.dot(mu))**2).sum()
     return -sse/(2.0*ssq) - np.log(2*np.pi*ssq)/2.0

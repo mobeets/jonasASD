@@ -1,14 +1,8 @@
 import numpy as np
 import scipy.optimize
-from asd import ASDEvi, ASDReg, PostCov, PostMean, LOWER_BOUND_DELTA_TEMPORAL
+from asd import ASDEvi, ASDEviGradient, ASDReg, MeanCov,  PostCov, PostMean, LOWER_BOUND_DELTA_TEMPORAL
 
-"""
-GOOD SOLUTIONS:
-    ro=7.06184735, ssq=56.27155504, delta=0.12
-        evidence=-700.661732086
-        neg. log likelihood=1356.99041683
-"""
-def ASD(X, Y, Ds, theta0=None, method='L-BFGS-B'): # 'SLSQP'
+def ASD(X, Y, Ds, theta0=None, jac=True, method='TNC'): # 'CG', 'SLSQP', 'L-BFGS-B'
     """
     X - (p x q) matrix with inputs in rows
     Y - (p, 1) matrix with measurements
@@ -27,67 +21,25 @@ def ASD(X, Y, Ds, theta0=None, method='L-BFGS-B'): # 'SLSQP'
     XY = X.T.dot(Y)
     XX = X.T.dot(X)
 
-    def objfcn(hyper):
+    def objfcn(hyper, jac=jac):
         ro, ssq = hyper[:2]
         deltas = hyper[2:]
         Reg = ASDReg(ro, zip(Ds, deltas))
-        sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
-        return -ASDEvi(X, Y, Reg, sigma, ssq, p, q)
+        mu, sigma = MeanCov(X, Y, Reg, ro, ssq)
+        evi = ASDEvi(X, Y, Reg, sigma, ssq, p, q)
+        if not jac:
+            return -evi
+        sse = (Y - X.dot(mu)**2).sum()
+        der_evi = ASDEviGradient(hyper, p, q, Ds, mu, sigma, Reg, sse)
+        return -evi, -np.array(der_evi)
 
-    theta = scipy.optimize.minimize(objfcn, theta0, bounds=bounds, method=method, jac=False)
+    theta = scipy.optimize.minimize(objfcn, theta0, bounds=bounds, method=method, jac=jac)
     if not theta['success']:
         print theta
     hyper = theta['x']
     print hyper
     ro, ssq = hyper[:2]
     deltas = hyper[2:]
-    Reg = ASDReg(ro, zip(Ds, deltas))
-    sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
-    mu = PostMean(sigma, XY, ssq)
-    return mu, Reg, hyper
-
-def ASD_noDelta(X, Y, Ds, deltas, theta0=None, method='L-BFGS-B'): # 'SLSQP'
-    theta0 = (1.0, 0.1) if theta0 is None else theta0    
-    bounds = [(-20.0, 20.0), (10e-6, 10e6)]
-    p, q = X.shape
-    XY = X.T.dot(Y)
-    XX = X.T.dot(X)
-
-    def objfcn(hyper):
-        ro, ssq = hyper
-        Reg = ASDReg(ro, zip(Ds, deltas))
-        sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
-        return -ASDEvi(X, Y, Reg, sigma, ssq, p, q)
-
-    theta = scipy.optimize.minimize(objfcn, theta0, bounds=bounds, method=method, jac=False)
-    if not theta['success']:
-        print theta
-    hyper = theta['x']
-    print hyper
-    ro, ssq = hyper
-    Reg = ASDReg(ro, zip(Ds, deltas))
-    sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
-    mu = PostMean(sigma, XY, ssq)
-    return mu, Reg, hyper
-
-def ASD_noRo(X, Y, Ds, ro, ssq, theta0=None, method='L-BFGS-B'): # 'SLSQP'
-    theta0 = (2.0,)*len(Ds) if theta0 is None else theta0
-    bounds = [(LOWER_BOUND_DELTA_TEMPORAL, 1e5)]
-    p, q = X.shape
-    XY = X.T.dot(Y)
-    XX = X.T.dot(X)
-
-    def objfcn(hyper):
-        Reg = ASDReg(ro, zip(Ds, [hyper]))
-        sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
-        return -ASDEvi(X, Y, Reg, sigma, ssq, p, q)
-
-    theta = scipy.optimize.minimize(objfcn, theta0, bounds=bounds, method=method, jac=False)
-    if not theta['success']:
-        print theta
-    hyper = theta['x']
-    print hyper
-    deltas = [hyper[0]]
     Reg = ASDReg(ro, zip(Ds, deltas))
     sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
     mu = PostMean(sigma, XY, ssq)

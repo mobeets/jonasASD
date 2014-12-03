@@ -2,43 +2,14 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from dio import load
-from asd import scores, MeanCov, ASDReg
-from solve import ASD, ASD_noDelta, ASD_noRo
+from solve import ASD
 from grid_zoom import grid_zoom
-
-def tmpplot(X, Y, D, (ro, ssq, delta)):
-    # for r in [7.0, 7.7]:
-    #     for d in [0.12, 0.8]:#xrange(1, 4):
-    # for d in [0.0001, 0.12, 0.51312846, 5.0, 50.0]:
-    for ro in [-20.0, 0.0, 2.0, 9.0]:
-        for d in [0.001]:#, 3.0]:
-            Reg = ASDReg(ro, [(D, d)])
-            mu, _ = MeanCov(X, Y, Reg, ro, ssq)
-            # color='0.5' if ro==0.0 else '0.2'
-            plt.plot(np.abs(mu), '-' if d == 0.001 else '--', lw=2, alpha=1.0, label='ro-{0},d-{1}'.format(ro, d))
-    d = 2.0
-    # ro = -10.0
-    ro = 1.0
-    Reg = ASDReg(ro, [(D, d)])
-    mu, _ = MeanCov(X, Y, Reg, ro, ssq)
-    plt.plot(np.abs(mu), '-' if d == 0.01 else '--', lw=2, alpha=1.0, label='ro-{0},d-{1}'.format(ro, d))
-    plt.legend()
+from asd import scores, MeanCov, ASDReg
 
 def main(infile, trainPct, nLags, (ro, ssq, delta), doScore, doPlot, doMinimize, doGridZoom):
     """
     TO DO next:
         * simulate weights that are, e.g., 2 2 2 2 -2 -2 -2 -2 but noisy and see how ro vs delta params compare
-
-    --ro 7.06184735 --ssq 56.27155504 --delta 0.12
-
-    --ro 8.84497231 --ssq 9.9393613 --delta 0.51312846
-    --ro 8.84497231 --ssq 9.9393613 --delta 0.5
-        evi=-2629.9342857768866
-        nll=7444.9439632018575
-
-    --ro 8.84497231 --ssq 9.93496026  --delta 0.51151012
-        evi=-2629.9265325811289
-        nll=7448.1781925010782
     """
     X0, Y0, X1, Y1, D = load(infile, nLags, trainPct)
     # D = (1-np.eye(D.shape[0]))
@@ -55,18 +26,16 @@ def main(infile, trainPct, nLags, (ro, ssq, delta), doScore, doPlot, doMinimize,
         print
     if doPlot:
         Reg = ASDReg(ro, [(D, delta)])
-        mu, _ = MeanCov(X0, Y0, Reg, ro, ssq)
+        mu, sigma = MeanCov(X0, Y0, Reg, ro, ssq)
         plt.plot([0, X0.shape[1]], [0.0, 0.0], '--', color='k', alpha=0.5)
-        # plt.plot(mu, '-', alpha=0.5, lw=2, label='ro-{0},d-{1}'.format(ro,delta))
-        tmpplot(X0, Y0, D, (ro, ssq, delta))
+        plt.plot(mu, '-', alpha=0.5, lw=2, label='ro-{0},d-{1}'.format(ro,delta))
+        # err = np.sqrt(np.diag(sigma))
+        # plt.errorbar(xrange(len(mu)), mu, yerr=err)
         plt.show()
     if doMinimize:
         print 'Solving...'
-        # mu, Reg, hyper = ASD_noDelta(X0, Y0, [D], [delta], (ro, ssq))
-        mu, Reg, hyper = ASD_noRo(X0, Y0, [D], ro, ssq, (delta,))
-        evi, nll = scores(X0, Y0, X1, Y1, D, np.hstack([ro, hyper]))
-        # mu, Reg, hyper = ASD(X0, Y0, [D], (ro, ssq, delta))
-        # evi, nll = scores(X0, Y0, X1, Y1, D, hyper)
+        mu, Reg, hyper = ASD(X0, Y0, [D], (ro, ssq, delta))
+        evi, nll = scores(X0, Y0, X1, Y1, D, hyper)
         print 'ro={0}, ssq={1}, delta={2}'.format(ro, ssq, delta)
         print 'evidence={0}'.format(evi)
         print 'neg. log likelihood={0}'.format(nll)
