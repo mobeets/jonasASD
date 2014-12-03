@@ -1,3 +1,7 @@
+## Ideas
+
+* regress where foe moves towards eye, foe moves away from eye
+
 ## Solutions
 
 ```
@@ -16,4 +20,17 @@
 --ro=7.06184735 --ssq=56.27155504 --delta=0.12
     evidence=-700.661732086
     neg. log likelihood=1356.99041683
+```
+
+## Jake
+
+```
+Active-Set
+
+--ro 11.0 --ssq 1.3 --delta 10.7
+
+log these, then exp
+(2.0, 20.0) -> 11
+(1.0, 2*10e4) -> 1.3
+(1.0, 2*10e4) -> 10.7
 ```

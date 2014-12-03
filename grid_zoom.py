@@ -1,7 +1,7 @@
 import itertools
 import numpy as np
 import pandas as pd
-from asd import ASDReg, ASDEvi, PostCov, LOWER_BOUND_DELTA_TEMPORAL
+from asd import ASDReg, ASDLogEvi, PostCovInv, LOWER_BOUND_DELTA_TEMPORAL
 
 def nextHyperInGridFromHyper(hyper, ds, n):
     rng = []
@@ -28,6 +28,7 @@ def ASDHyperGrid(X, Y, Ds, n=5, hyper0=None, ds=None):
     p, q = X.shape
     XX = X.T.dot(X)
     XY = X.T.dot(Y)
+    YY = Y.T.dot(Y)
     evis = []
     if hyper0 is not None:
         grid = nextHyperInGridFromHyper(hyper0, ds, n)
@@ -38,8 +39,8 @@ def ASDHyperGrid(X, Y, Ds, n=5, hyper0=None, ds=None):
         ro, ssq = hyper[:2]
         deltas = hyper[2:]
         Reg = ASDReg(ro, zip(Ds, deltas))
-        sigma = PostCov(np.linalg.inv(Reg), XX, ssq)
-        evi = ASDEvi(X, Y, Reg, sigma, ssq, p, q)
+        SigmaInv = PostCovInv(np.linalg.inv(Reg), XX, ssq)
+        evi = ASDLogEvi(XX, YY, XY, Reg, SigmaInv, ssq, p, q)
         print evi
         print '-----'
         evis.append((hyper, evi))
