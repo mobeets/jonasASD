@@ -20,15 +20,11 @@ def nextHyperInGridFromBounds(bounds, n):
         rng.append(np.linspace(lb, ub, n))
     return rng
 
-def ASDHyperGrid(X, Y, Ds, n=5, hyper0=None, ds=None):
+def ASDHyperGrid(XX, XY, YY, p, q, Ds, n=5, hyper0=None, ds=None):
     """
     evaluates the evidence at each hyperparam
         within a grid of valid hyperparams
     """
-    p, q = X.shape
-    XX = X.T.dot(X)
-    XY = X.T.dot(Y)
-    YY = Y.T.dot(Y)
     evis = []
     if hyper0 is not None:
         grid = nextHyperInGridFromHyper(hyper0, ds, n)
@@ -66,6 +62,11 @@ def grid_zoom(X, Y, D, hyper0, delta0=None, nbins=4, nzooms=4, outfile='out/evid
         evidence=835929962.586
         neg. log likelihood=34109514.9469
     """
+    p, q = X.shape
+    XX = X.T.dot(X)
+    XY = X.T.dot(Y)
+    YY = Y.T.dot(Y)
+    
     delta0 = np.array(hyper0) - 1e-5 if delta0 is None else delta0
 
     nhypers = len(hyper0)
@@ -84,7 +85,7 @@ def grid_zoom(X, Y, D, hyper0, delta0=None, nbins=4, nzooms=4, outfile='out/evid
 
         # hs = itertools.product(*[np.linspace(x-d, x+d, nbins) for x, d in zip(center, delta)])
         # evis = [(h, np.random.rand()) for h in hs]
-        evis = ASDHyperGrid(X, Y, [D], n=nbins, hyper0=center, ds=delta)
+        evis = ASDHyperGrid(XX, XY, YY, p, q, [D], n=nbins, hyper0=center, ds=delta)
         eviM = max(evis, key=lambda x: x[-1])
         print 'Max grid evidence: {0}'.format(eviM)
 

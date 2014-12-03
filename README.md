@@ -20,6 +20,10 @@
 --ro=7.06184735 --ssq=56.27155504 --delta=0.12
     evidence=-700.661732086
     neg. log likelihood=1356.99041683
+
+[ 9.2329678   1.64542619  4.98630877]
+    TNC max dude, starting from Ridge solution
+
 ```
 
 ## Jake
