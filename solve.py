@@ -2,7 +2,7 @@ import numpy as np
 import scipy.optimize
 from asd import ASDLogEvi, ASDEviGradient, ASDReg, PostCovInv, PostMean, MeanInvCov, LOWER_BOUND_DELTA_TEMPORAL
 
-def ASD(X, Y, Ds, theta0=None, jac=False, method='TNC'): # 'TNC' 'CG', 'SLSQP', 'L-BFGS-B'
+def ASD(X, Y, Ds, theta0=None, jac=False, method='L-BFGS-B'): # 'TNC' 'CG', 'SLSQP', 'L-BFGS-B'
     """
     X - (p x q) matrix with inputs in rows
     Y - (p, 1) matrix with measurements
@@ -33,9 +33,9 @@ def ASD(X, Y, Ds, theta0=None, jac=False, method='TNC'): # 'TNC' 'CG', 'SLSQP', 
         evi = ASDLogEvi(XX, YY, XY, Reg, SigmaInv, ssq, p, q)
         if not jac:
             return -evi
-        sse = (Y - X.dot(mu)**2).sum()
         mu = PostMean(SigmaInv, XY, ssq)
-        der_evi = ASDEviGradient(hyper, p, q, Ds, mu, np.linalg.inv(Sigma), Reg, sse)
+        sse = (Y - X.dot(mu)**2).sum()
+        der_evi = ASDEviGradient(hyper, p, q, Ds, mu, SigmaInv, Reg, sse)
         return -evi, -np.array(der_evi)
 
     theta = scipy.optimize.minimize(objfcn, theta0, bounds=bounds, method=method, jac=jac)

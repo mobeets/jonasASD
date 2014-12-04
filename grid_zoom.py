@@ -66,8 +66,8 @@ def grid_zoom(X, Y, D, hyper0, delta0=None, nbins=4, nzooms=4, outfile='out/evid
     XX = X.T.dot(X)
     XY = X.T.dot(Y)
     YY = Y.T.dot(Y)
-    
-    delta0 = np.array(hyper0) - 1e-5 if delta0 is None else delta0
+
+    delta0 = np.array(hyper0) - 1e-3 if delta0 is None else delta0
 
     nhypers = len(hyper0)
     deltas = np.zeros([nzooms, nhypers])
