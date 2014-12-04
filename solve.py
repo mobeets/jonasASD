@@ -2,7 +2,7 @@ import numpy as np
 import scipy.optimize
 from asd import ASDLogEvi, ASDEviGradient, ASDReg, PostCovInv, PostMean, MeanInvCov, LOWER_BOUND_DELTA_TEMPORAL
 
-def ASD(X, Y, Ds, theta0=None, jac=False, method='L-BFGS-B'): # 'TNC' 'CG', 'SLSQP', 'L-BFGS-B'
+def ASD(X, Y, Ds, theta0=None, jac=True, isLog=True, method='TNC'): # 'TNC' 'CG', 'SLSQP', 'L-BFGS-B'
     """
     X - (p x q) matrix with inputs in rows
     Y - (p, 1) matrix with measurements
@@ -14,18 +14,22 @@ def ASD(X, Y, Ds, theta0=None, jac=False, method='L-BFGS-B'): # 'TNC' 'CG', 'SLS
         In S. Becker, S. Thrun, and K. Obermayer, eds.
         Advances in Neural Information Processing Systems, vol. 15, pp. 301-308, Cambridge, MA, 2003
     """
-    theta0 = (1.0, 0.1) + (2.0,)*len(Ds) if theta0 is None else theta0    
-    theta0 = np.log(theta0)
-    # bounds = [(-20.0, 20.0), (10e-6, 10e6)] + [(1e-5, 10e3)]*len(Ds)
-    # bounds = [(-20.0, 20.0), (10e-6, 10e6)] + [(LOWER_BOUND_DELTA_TEMPORAL, 1e5)]*len(Ds)
-    bounds = [(1.0, 3.0), (0.0, 10.0)] + [(0.0, 10.0)]*len(Ds)
+    theta0 = (1.0, 0.1) + (2.0,)*len(Ds) if theta0 is None else theta0
+    if isLog:
+        theta0 = np.log(theta0)
+        bounds = [(1.0, 3.0), (0.0, 10.0)] + [(0.0, 10.0)]*len(Ds)
+    else:
+        bounds = [(-20.0, 20.0), (10e-6, 10e6)] + [(LOWER_BOUND_DELTA_TEMPORAL, 1e5)]*len(Ds)
     p, q = X.shape
     YY = Y.T.dot(Y)
     XY = X.T.dot(Y)
     XX = X.T.dot(X)
 
-    def objfcn(hyper, jac=jac):
-        hyper = np.exp(hyper)
+    def objfcn(hyper, jac=jac, verbose=True):
+        if isLog:
+            hyper = np.exp(hyper)
+        if verbose:
+            print hyper
         ro, ssq = hyper[:2]
         deltas = hyper[2:]
         Reg = ASDReg(ro, zip(Ds, deltas))
@@ -35,13 +39,18 @@ def ASD(X, Y, Ds, theta0=None, jac=False, method='L-BFGS-B'): # 'TNC' 'CG', 'SLS
             return -evi
         mu = PostMean(SigmaInv, XY, ssq)
         sse = (Y - X.dot(mu)**2).sum()
-        der_evi = ASDEviGradient(hyper, p, q, Ds, mu, SigmaInv, Reg, sse)
+        der_evi = ASDEviGradient(hyper, p, q, Ds, mu, np.linalg.inv(SigmaInv), Reg, sse)
+        if verbose:
+            print -np.array(der_evi)
         return -evi, -np.array(der_evi)
 
-    theta = scipy.optimize.minimize(objfcn, theta0, bounds=bounds, method=method, jac=jac)
+    options = {'disp': 5}
+    theta = scipy.optimize.minimize(objfcn, theta0, bounds=bounds, method=method, jac=jac, options=options)
     if not theta['success']:
         print theta
-    hyper = np.exp(theta['x'])
+    hyper = theta['x']
+    if isLog:
+        hyper = np.exp(hyper)
     print hyper
     ro, ssq = hyper[:2]
     deltas = hyper[2:]

@@ -16,6 +16,14 @@ def split(X, Y, N=None, M=None, startM=0, front=True):
         Y = Y[-(N+1):]
     return X, Y
 
+def load_(infile, nLags=1000):
+    from statsmodels.tsa.tsatools import lagmat
+    assert infile.endswith('.npy')
+    X, Y = np.load(infile)
+    X0 = lagmat(X, nLags, trim='both')
+    ind = len(X)-len(X0)
+    return X0, Y[ind:]
+
 def load_raw(infile, keep_ones=True):
     assert infile.endswith('.npy')
     xs = np.load(infile)
