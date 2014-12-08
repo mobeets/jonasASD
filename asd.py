@@ -32,8 +32,7 @@ def ASDEviGradient(hyper, p, q, Ds, mu, Sigma, Reg, sse):
     Z = rinv(Reg, Reg - Sigma - np.outer(mu, mu))
     der_ro = np.trace(Z)/2.0
     
-    # the below two lines are not even used!
-    v = -p + np.trace(np.eye(q) - rinv(Reg, Sigma))
+    v = -p + q - np.trace(rinv(Reg, Sigma))
     der_ssq = sse/(ssq**2) + v/ssq
 
     der_deltas = []
