@@ -45,6 +45,7 @@ def main(infile, trainPct, nLags, (ro, ssq, delta), doScore, doPlot, doSolve, do
     if doSolve:
         print 'Solving...'
         mu, Reg, hyper = ASD(X0, Y0, [D], (ro, ssq, delta))
+        ro, ssq, delta = hyper
         evi, nll = scores(X0, Y0, X1, Y1, D, hyper)
         print 'ro={0}, ssq={1}, delta={2}'.format(ro, ssq, delta)
         print 'evidence={0}'.format(evi)

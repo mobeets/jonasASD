@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.optimize
-from asd import ASDLogEvi, ASDEviGradient, ASDReg, PostCovInv, PostMean, MeanInvCov, LOWER_BOUND_DELTA_TEMPORAL
+from asd import ASDLogEvi, ASDLogEviSVD, ASDEviGradient, ASDReg, PostCovInv, PostMean, MeanInvCov, LOWER_BOUND_DELTA_TEMPORAL
 
-def ASD(X, Y, Ds, theta0=None, jac=True, isLog=True, method='TNC'): # 'TNC' 'CG', 'SLSQP', 'L-BFGS-B'
+def ASD(X, Y, Ds, theta0=None, jac=False, isLog=True, method='TNC'): # 'TNC' 'CG', 'SLSQP', 'L-BFGS-B'
     """
     X - (p x q) matrix with inputs in rows
     Y - (p, 1) matrix with measurements
@@ -17,7 +17,7 @@ def ASD(X, Y, Ds, theta0=None, jac=True, isLog=True, method='TNC'): # 'TNC' 'CG'
     theta0 = (1.0, 0.1) + (2.0,)*len(Ds) if theta0 is None else theta0
     if isLog:
         theta0 = np.log(theta0)
-        bounds = [(1.0, 3.0), (0.0, 10.0)] + [(0.0, 10.0)]*len(Ds)
+        bounds = [(-3.0, 3.0), (-2.0, 10.0)] + [(-5.0, 10.0)]*len(Ds)
     else:
         bounds = [(-20.0, 20.0), (10e-6, 10e6)] + [(LOWER_BOUND_DELTA_TEMPORAL, 1e5)]*len(Ds)
     p, q = X.shape
@@ -33,16 +33,20 @@ def ASD(X, Y, Ds, theta0=None, jac=True, isLog=True, method='TNC'): # 'TNC' 'CG'
         ro, ssq = hyper[:2]
         deltas = hyper[2:]
         Reg = ASDReg(ro, zip(Ds, deltas))
-        SigmaInv = PostCovInv(np.linalg.inv(Reg), XX, ssq)
-        evi = ASDLogEvi(XX, YY, XY, Reg, SigmaInv, ssq, p, q)
+        try:
+            _ = np.linalg.cholesky(Reg) # raises exception if not positive definite
+            SigmaInv = PostCovInv(np.linalg.inv(Reg), XX, ssq)
+            logevi = ASDLogEvi(XX, YY, XY, Reg, SigmaInv, ssq, p, q)
+        except np.linalg.LinAlgError:
+            logevi = ASDLogEviSVD(X, Y, YY, Reg, ssq) # svd trick
         if not jac:
-            return -evi
+            return -logevi
         mu = PostMean(SigmaInv, XY, ssq)
         sse = (Y - X.dot(mu)**2).sum()
-        der_evi = ASDEviGradient(hyper, p, q, Ds, mu, np.linalg.inv(SigmaInv), Reg, sse)
+        der_logevi = ASDEviGradient(hyper, p, q, Ds, mu, np.linalg.inv(SigmaInv), Reg, sse)
         if verbose:
-            print -np.array(der_evi)
-        return -evi, -np.array(der_evi)
+            print -np.array(der_logevi)
+        return -logevi, -np.array(der_logevi)
 
     options = {'disp': 5}
     theta = scipy.optimize.minimize(objfcn, theta0, bounds=bounds, method=method, jac=jac, options=options)

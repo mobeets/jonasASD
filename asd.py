@@ -7,6 +7,18 @@ logDet = lambda x: np.linalg.slogdet(x)[1]
 linv = lambda A, y: np.linalg.solve(A, y)
 rinv = lambda A, y: np.linalg.solve(A.T, y.T).T
 
+def ASDLogEviSVD(X, Y, YY, Reg, ssq, tol=1e-8):
+    U, s, _ = np.linalg.svd(Reg)
+    inds = s/s[0] > tol
+    RegInv = np.diag(1/s[inds])
+    print 'SVD: {0} to {1}'.format(len(inds), inds.sum())
+    B = U[:,inds]
+    XB = X.dot(B)
+    XBXB = XB.T.dot(XB)
+    XBY = XB.T.dot(Y)
+    SigmaInv = PostCovInv(RegInv, XBXB, ssq)
+    return ASDLogEvi(XBXB, YY, XBY, np.diag(s[inds]), SigmaInv, ssq, XB.shape[0], XB.shape[1])
+
 def PostCovInv(RegInv, XX, ssq):
     return XX/ssq + RegInv
 
